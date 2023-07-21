@@ -1039,48 +1039,19 @@ locals {
 }
 
 resource "aws_eip" "nat" {
-  count = local.create_vpc && var.enable_nat_gateway && !var.reuse_nat_ips ? local.nat_gateway_count : 0
-
-  domain = "vpc"
-
-  tags = merge(
-    {
-      "Name" = format(
-        "${var.name}-%s",
-        element(var.azs, var.single_nat_gateway ? 0 : count.index),
-      )
-    },
-    var.tags,
-    var.nat_eip_tags,
-  )
+  for_each = { for k, v in var.eips : k => v }
+  domain   = "vpc"
+  tags     = each.value.tags
 
   depends_on = [aws_internet_gateway.this]
 }
 
 resource "aws_nat_gateway" "this" {
-  count = local.create_vpc && var.enable_nat_gateway ? local.nat_gateway_count : 0
-
-  allocation_id = element(
-    local.nat_gateway_ips,
-    var.single_nat_gateway ? 0 : count.index,
-  )
-  subnet_id = element(
-    aws_subnet.public[*].id,
-    var.single_nat_gateway ? 0 : count.index,
-  )
-
-  tags = merge(
-    {
-      "Name" = format(
-        "${var.name}-%s",
-        element(var.azs, var.single_nat_gateway ? 0 : count.index),
-      )
-    },
-    var.tags,
-    var.nat_gateway_tags,
-  )
-
-  depends_on = [aws_internet_gateway.this]
+  for_each      = { for k, v in var.nat_gateways : k => v }
+  allocation_id = each.value.allocation_id
+  subnet_id     = each.value.subnet_id
+  tags          = each.value.tags
+  depends_on    = [aws_internet_gateway.this]
 }
 
 resource "aws_route" "private_nat_gateway" {

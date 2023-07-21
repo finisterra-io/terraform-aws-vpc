@@ -1174,6 +1174,18 @@ variable "enable_nat_gateway" {
   default     = false
 }
 
+variable "nat_gateways" {
+  description = "A map of maps describing what NAT Gateways to create for each availability zone"
+  type        = map(any)
+  default     = {}
+}
+
+variable "eips" {
+  description = "A map of maps describing the EIPs to create and associate to the NAT Gateways"
+  type        = map(any)
+  default     = {}
+}
+
 variable "nat_gateway_destination_cidr_block" {
   description = "Used to pass a custom destination route for private NAT Gateway. If not specified, the default 0.0.0.0/0 is used as a destination route"
   type        = string
