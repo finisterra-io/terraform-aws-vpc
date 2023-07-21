@@ -19,7 +19,7 @@ locals {
   # Use `local.vpc_id` to give a hint to Terraform that subnets should be deleted before secondary CIDR blocks can be free!
   vpc_id = try(aws_vpc_ipv4_cidr_block_association.this[0].vpc_id, aws_vpc.this[0].id, "")
 
-  create_vpc = var.create_vpc && var.putin_khuylo
+  create_vpc = var.create_vpc
 }
 
 ################################################################################
@@ -1055,15 +1055,12 @@ resource "aws_nat_gateway" "this" {
 }
 
 resource "aws_route" "private_nat_gateway" {
-  count = local.create_vpc && var.enable_nat_gateway ? local.nat_gateway_count : 0
+  for_each = { for k, v in var.nat_gateway_routes : k => v }
 
-  route_table_id         = element(aws_route_table.private[*].id, count.index)
-  destination_cidr_block = var.nat_gateway_destination_cidr_block
-  nat_gateway_id         = element(aws_nat_gateway.this[*].id, count.index)
+  route_table_id         = each.value.route_table_id
+  destination_cidr_block = each.value.destination_cidr_block
+  nat_gateway_id         = each.value.nat_gateway_id
 
-  timeouts {
-    create = "5m"
-  }
 }
 
 resource "aws_route" "private_dns64_nat_gateway" {

@@ -186,7 +186,9 @@ output "private_route_table_ids" {
 
 output "private_nat_gateway_route_ids" {
   description = "List of IDs of the private nat gateway route"
-  value       = aws_route.private_nat_gateway[*].id
+  value = {
+    for k, v in aws_route.private_nat_gateway : k => v.id
+  }
 }
 
 output "private_ipv6_egress_route_ids" {
@@ -473,6 +475,7 @@ output "nat_ids" {
   value = {
     for k, v in aws_nat_gateway.this : k => v.allocation_id
   }
+
 }
 
 output "nat_public_ips" {

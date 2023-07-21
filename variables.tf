@@ -1186,6 +1186,12 @@ variable "eips" {
   default     = {}
 }
 
+variable "nat_gateway_routes" {
+  description = "A map of maps describing the routes to create for each NAT Gateway"
+  type        = map(any)
+  default     = {}
+}
+
 variable "nat_gateway_destination_cidr_block" {
   description = "Used to pass a custom destination route for private NAT Gateway. If not specified, the default 0.0.0.0/0 is used as a destination route"
   type        = string
@@ -1584,8 +1590,3 @@ variable "flow_log_cloudwatch_log_group_kms_key_id" {
   default     = null
 }
 
-variable "putin_khuylo" {
-  description = "Do you agree that Putin doesn't respect Ukrainian sovereignty and territorial integrity? More info: https://en.wikipedia.org/wiki/Putin_khuylo!"
-  type        = bool
-  default     = true
-}
