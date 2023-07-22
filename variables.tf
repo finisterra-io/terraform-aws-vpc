@@ -116,6 +116,25 @@ variable "tags" {
   default     = {}
 }
 
+variable "aws_network_acls" {
+  description = "A map of network ACLs to associate with the VPC"
+  type        = map(any)
+  default     = {}
+}
+
+variable "aws_network_acl_ingress_rules" {
+  description = "A map of ingress rules to associate with the VPC"
+  type        = map(any)
+  default     = {}
+}
+
+variable "aws_network_acl_egress_rules" {
+  description = "A map of egress rules to associate with the VPC"
+  type        = map(any)
+  default     = {}
+}
+
+
 ################################################################################
 # DHCP Options Set
 ################################################################################
@@ -259,6 +278,7 @@ variable "public_dedicated_network_acl" {
   type        = bool
   default     = false
 }
+
 
 variable "public_inbound_acl_rules" {
   description = "Public subnets inbound network ACLs"

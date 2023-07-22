@@ -164,54 +164,49 @@ resource "aws_route" "public_internet_gateway_ipv6" {
 }
 
 ################################################################################
-# Public Network ACLs
+# All Network ACLs
 ################################################################################
 
-resource "aws_network_acl" "public" {
-  count = local.create_public_subnets && var.public_dedicated_network_acl ? 1 : 0
+resource "aws_network_acl" "this" {
+  for_each = { for k, v in var.aws_network_acls : k => v }
 
   vpc_id     = local.vpc_id
-  subnet_ids = aws_subnet.public[*].id
-
-  tags = merge(
-    { "Name" = "${var.name}-${var.public_subnet_suffix}" },
-    var.tags,
-    var.public_acl_tags,
-  )
+  subnet_ids = each.value.subnet_ids
+  tags       = each.value.tags
 }
 
-resource "aws_network_acl_rule" "public_inbound" {
-  count = local.create_public_subnets && var.public_dedicated_network_acl ? length(var.public_inbound_acl_rules) : 0
+resource "aws_network_acl_rule" "ingress" {
+  for_each = { for k, v in var.aws_network_acl_ingress_rules : k => v }
 
-  network_acl_id = aws_network_acl.public[0].id
+  network_acl_id = each.value.network_acl_id
 
   egress          = false
-  rule_number     = var.public_inbound_acl_rules[count.index]["rule_number"]
-  rule_action     = var.public_inbound_acl_rules[count.index]["rule_action"]
-  from_port       = lookup(var.public_inbound_acl_rules[count.index], "from_port", null)
-  to_port         = lookup(var.public_inbound_acl_rules[count.index], "to_port", null)
-  icmp_code       = lookup(var.public_inbound_acl_rules[count.index], "icmp_code", null)
-  icmp_type       = lookup(var.public_inbound_acl_rules[count.index], "icmp_type", null)
-  protocol        = var.public_inbound_acl_rules[count.index]["protocol"]
-  cidr_block      = lookup(var.public_inbound_acl_rules[count.index], "cidr_block", null)
-  ipv6_cidr_block = lookup(var.public_inbound_acl_rules[count.index], "ipv6_cidr_block", null)
+  rule_number     = each.value.rule_number
+  rule_action     = each.value.rule_action
+  from_port       = lookup(each.value, "from_port", null)
+  to_port         = lookup(each.value, "to_port", null)
+  icmp_code       = lookup(each.value, "icmp_code", null)
+  icmp_type       = lookup(each.value, "icmp_type", null)
+  protocol        = each.value.protocol
+  cidr_block      = lookup(each.value, "cidr_block", null)
+  ipv6_cidr_block = lookup(each.value, "ipv6_cidr_block", null)
 }
 
-resource "aws_network_acl_rule" "public_outbound" {
-  count = local.create_public_subnets && var.public_dedicated_network_acl ? length(var.public_outbound_acl_rules) : 0
+resource "aws_network_acl_rule" "egress" {
+  for_each = { for k, v in var.aws_network_acl_egress_rules : k => v }
 
-  network_acl_id = aws_network_acl.public[0].id
+  network_acl_id = each.value.network_acl_id
 
   egress          = true
-  rule_number     = var.public_outbound_acl_rules[count.index]["rule_number"]
-  rule_action     = var.public_outbound_acl_rules[count.index]["rule_action"]
-  from_port       = lookup(var.public_outbound_acl_rules[count.index], "from_port", null)
-  to_port         = lookup(var.public_outbound_acl_rules[count.index], "to_port", null)
-  icmp_code       = lookup(var.public_outbound_acl_rules[count.index], "icmp_code", null)
-  icmp_type       = lookup(var.public_outbound_acl_rules[count.index], "icmp_type", null)
-  protocol        = var.public_outbound_acl_rules[count.index]["protocol"]
-  cidr_block      = lookup(var.public_outbound_acl_rules[count.index], "cidr_block", null)
-  ipv6_cidr_block = lookup(var.public_outbound_acl_rules[count.index], "ipv6_cidr_block", null)
+  rule_number     = each.value.rule_number
+  rule_action     = each.value.rule_action
+  from_port       = lookup(each.value, "from_port", null)
+  to_port         = lookup(each.value, "to_port", null)
+  icmp_code       = lookup(each.value, "icmp_code", null)
+  icmp_type       = lookup(each.value, "icmp_type", null)
+  protocol        = each.value.protocol
+  cidr_block      = lookup(each.value, "cidr_block", null)
+  ipv6_cidr_block = lookup(each.value, "ipv6_cidr_block", null)
 }
 
 ################################################################################

@@ -145,14 +145,11 @@ output "public_route_table_association_ids" {
   value       = aws_route_table_association.public[*].id
 }
 
-output "public_network_acl_id" {
-  description = "ID of the public network ACL"
-  value       = try(aws_network_acl.public[0].id, null)
-}
-
-output "public_network_acl_arn" {
-  description = "ARN of the public network ACL"
-  value       = try(aws_network_acl.public[0].arn, null)
+output "network_acl_id" {
+  description = "IDs of the network ACL"
+  value = {
+    for k, v in aws_network_acl.this : k => v.id
+  }
 }
 
 ################################################################################
