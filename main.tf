@@ -239,7 +239,7 @@ resource "aws_subnet" "private" {
 
 # There are as many routing tables as the number of NAT gateways
 resource "aws_route_table" "private" {
-  count = local.create_private_subnets ? local.nat_gateway_count : 0
+  count = local.create_private_subnets ? local.len_private_subnets : 0
 
   vpc_id = local.vpc_id
 
