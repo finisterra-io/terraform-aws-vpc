@@ -60,7 +60,6 @@ resource "aws_iam_role" "vpc_flow_log_cloudwatch" {
   count = var.create_flow_log_cloudwatch_iam_role ? 1 : 0
 
   name                 = var.flow_aws_iam_role_name
-  name_prefix          = var.flow_aws_iam_role_name_prefix
   assume_role_policy   = var.flow_aws_iam_role_assume_role_policy
   permissions_boundary = var.flow_aws_iam_role_permissions_boundary
   description          = var.flow_aws_iam_role_description
@@ -97,7 +96,6 @@ resource "aws_iam_policy" "vpc_flow_log_cloudwatch" {
   count = local.create_flow_log_cloudwatch_iam_role ? 1 : 0
 
   name        = var.flow_iam_policy_name
-  name_prefix = var.flow_name_prefix
   description = var.flow_iam_policy_description
   policy      = var.flow_iam_policy_document
   path        = var.flow_iam_policy_path

@@ -181,6 +181,18 @@ variable "dhcp_options_tags" {
   default     = {}
 }
 
+variable "dhcp_options_id" {
+  description = "The ID of the DHCP Options Set to associate to the VPC (requires enable_dhcp_options set to true)"
+  type        = string
+  default     = null
+}
+
+variable "enable_dhcp_options_association" {
+  description = "Should be true if you want to associate a DHCP Options Set to the VPC"
+  type        = bool
+  default     = false
+}
+
 ################################################################################
 # Publiс Subnets
 ################################################################################
@@ -394,8 +406,8 @@ variable "private_subnet_tags_per_az" {
 
 variable "private_route_table_tags" {
   description = "Additional tags for the private route tables"
-  type        = map(string)
-  default     = {}
+  type        = list(map(any))
+  default     = []
 }
 
 ################################################################################
@@ -1686,11 +1698,6 @@ variable "flow_log_cloudwatch_log_group_kms_key_id" {
 
 variable "flow_iam_policy_name" {
   description = "The name of the IAM policy to create for VPC Flow Logs"
-  type        = string
-  default     = ""
-}
-variable "flow_name_prefix" {
-  description = "The prefix to apply to the IAM policy name. It can be a maximum of 64 characters"
   type        = string
   default     = ""
 }

@@ -73,18 +73,14 @@ resource "aws_vpc_dhcp_options" "this" {
   netbios_name_servers = var.dhcp_options_netbios_name_servers
   netbios_node_type    = var.dhcp_options_netbios_node_type
 
-  tags = merge(
-    { "Name" = var.name },
-    var.tags,
-    var.dhcp_options_tags,
-  )
+  tags = var.dhcp_options_tags
 }
 
 resource "aws_vpc_dhcp_options_association" "this" {
-  count = local.create_vpc && var.enable_dhcp_options ? 1 : 0
+  count = local.create_vpc && var.enable_dhcp_options_association ? 1 : 0
 
   vpc_id          = local.vpc_id
-  dhcp_options_id = aws_vpc_dhcp_options.this[0].id
+  dhcp_options_id = var.dhcp_options_id
 }
 
 ################################################################################
@@ -129,11 +125,7 @@ resource "aws_route_table" "public" {
 
   vpc_id = local.vpc_id
 
-  tags = merge(
-    { "Name" = "${var.name}-${var.public_subnet_suffix}" },
-    var.tags,
-    var.public_route_table_tags,
-  )
+  tags = var.public_route_table_tags
 }
 
 resource "aws_route_table_association" "public" {
@@ -247,20 +239,11 @@ resource "aws_subnet" "private" {
 
 # There are as many routing tables as the number of NAT gateways
 resource "aws_route_table" "private" {
-  count = local.create_private_subnets && local.max_subnet_length > 0 ? local.nat_gateway_count : 0
+  count = local.create_private_subnets ? local.nat_gateway_count : 0
 
   vpc_id = local.vpc_id
 
-  tags = merge(
-    {
-      "Name" = var.single_nat_gateway ? "${var.name}-${var.private_subnet_suffix}" : format(
-        "${var.name}-${var.private_subnet_suffix}-%s",
-        element(var.azs, count.index),
-      )
-    },
-    var.tags,
-    var.private_route_table_tags,
-  )
+  tags = element(var.private_route_table_tags, count.index)
 }
 
 resource "aws_route_table_association" "private" {
@@ -1029,7 +1012,7 @@ resource "aws_route" "private_ipv6_egress" {
 ################################################################################
 
 locals {
-  nat_gateway_count = var.single_nat_gateway ? 1 : var.one_nat_gateway_per_az ? length(var.azs) : local.max_subnet_length
+  nat_gateway_count = length(var.nat_gateways)
   nat_gateway_ips   = var.reuse_nat_ips ? var.external_nat_ip_ids : try(aws_eip.nat[*].id, [])
 }
 
@@ -1205,11 +1188,7 @@ resource "aws_default_security_group" "this" {
     }
   }
 
-  tags = merge(
-    { "Name" = coalesce(var.default_security_group_name, "${var.name}-default") },
-    var.tags,
-    var.default_security_group_tags,
-  )
+  tags = var.default_security_group_tags
 }
 
 ################################################################################
@@ -1254,11 +1233,7 @@ resource "aws_default_network_acl" "this" {
     }
   }
 
-  tags = merge(
-    { "Name" = coalesce(var.default_network_acl_name, "${var.name}-default") },
-    var.tags,
-    var.default_network_acl_tags,
-  )
+  tags = var.default_network_acl_tags
 
   lifecycle {
     ignore_changes = [subnet_ids]
@@ -1299,9 +1274,5 @@ resource "aws_default_route_table" "default" {
     update = "5m"
   }
 
-  tags = merge(
-    { "Name" = coalesce(var.default_route_table_name, "${var.name}-default") },
-    var.tags,
-    var.default_route_table_tags,
-  )
+  tags = var.default_route_table_tags
 }
