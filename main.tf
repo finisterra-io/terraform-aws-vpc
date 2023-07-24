@@ -1025,8 +1025,9 @@ resource "aws_eip" "nat" {
 }
 
 resource "aws_nat_gateway" "this" {
-  for_each      = { for k, v in var.nat_gateways : k => v }
-  allocation_id = each.value.allocation_id
+  for_each = var.nat_gateways
+
+  allocation_id = aws_eip.nat[each.key].id
   subnet_id     = each.value.subnet_id
   tags          = each.value.tags
   depends_on    = [aws_internet_gateway.this]
