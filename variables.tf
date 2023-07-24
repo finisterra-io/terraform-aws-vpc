@@ -1564,6 +1564,78 @@ variable "vpc_flow_log_tags" {
   default     = {}
 }
 
+variable "flow_log_iam_role_arn" {
+  description = "The ARN for the IAM role that's used to post flow logs to a CloudWatch Logs log group. When flow_log_destination_arn is set to ARN of Cloudwatch Logs, this argument needs to be provided"
+  type        = string
+  default     = ""
+}
+
+variable "flow_log_destination_prefix" {
+  description = "The prefix to apply to the flow log filename. It can be a maximum of 250 characters"
+  type        = string
+  default     = ""
+}
+
+variable "flow_log_destination" {
+  description = "The ARN of the S3 bucket for the flow log"
+  type        = string
+  default     = ""
+}
+
+variable "aws_flow_logs" {
+  description = "A map of maps describing what flow logs to create for each subnet"
+  type        = map(any)
+  default     = {}
+}
+
+variable "flow_log_aws_iam_roles" {
+  description = "A map of maps describing the IAM roles to create for each flow log"
+  type        = map(any)
+  default     = {}
+}
+
+variable "flow_aws_iam_role_name" {
+  description = "The name of the IAM role to create for VPC Flow Logs"
+  type        = string
+  default     = ""
+}
+
+variable "flow_aws_iam_role_name_prefix" {
+  description = "The prefix to apply to the IAM role name. It can be a maximum of 64 characters"
+  type        = string
+  default     = ""
+}
+
+variable "flow_aws_iam_role_assume_role_policy" {
+  description = "The policy that grants an entity permission to assume the role"
+  type        = string
+  default     = ""
+}
+
+variable "flow_aws_iam_role_permissions_boundary" {
+  description = "The ARN of the policy that is used to set the permissions boundary for the role"
+  type        = string
+  default     = ""
+}
+
+variable "flow_aws_iam_role_description" {
+  description = "The description of the role"
+  type        = string
+  default     = ""
+}
+
+variable "flow_aws_iam_role_path" {
+  description = "The path to the role"
+  type        = string
+  default     = ""
+}
+
+variable "flow_aws_iam_role_tags" {
+  description = "A map of tags to assign to the IAM role"
+  type        = map(string)
+  default     = {}
+}
+
 ################################################################################
 # Flow Log CloudWatch
 ################################################################################
@@ -1610,3 +1682,47 @@ variable "flow_log_cloudwatch_log_group_kms_key_id" {
   default     = null
 }
 
+
+
+variable "flow_iam_policy_name" {
+  description = "The name of the IAM policy to create for VPC Flow Logs"
+  type        = string
+  default     = ""
+}
+variable "flow_name_prefix" {
+  description = "The prefix to apply to the IAM policy name. It can be a maximum of 64 characters"
+  type        = string
+  default     = ""
+}
+variable "flow_iam_policy_description" {
+  description = "The description of the IAM policy"
+  type        = string
+  default     = ""
+}
+variable "flow_iam_policy_document" {
+  description = "The policy document of the IAM policy"
+  type        = string
+  default     = ""
+}
+variable "flow_iam_policy_path" {
+  description = "The path to the IAM policy"
+  type        = string
+  default     = ""
+}
+variable "flow_policy_tags" {
+  description = "A map of tags to assign to the IAM policy"
+  type        = map(string)
+  default     = {}
+}
+
+variable "flow_log_cloudwatch_log_group_tags" {
+  description = "A map of tags to assign to the CloudWatch log group"
+  type        = map(string)
+  default     = {}
+}
+
+variable "flow_log_cloudwatch_log_group_name" {
+  description = "The name of the CloudWatch log group for VPC Flow Logs"
+  type        = string
+  default     = ""
+}

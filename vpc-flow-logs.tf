@@ -15,27 +15,31 @@ locals {
 ################################################################################
 
 resource "aws_flow_log" "this" {
-  count = local.enable_flow_log ? 1 : 0
+  for_each = { for k, v in var.aws_flow_logs : k => v }
 
-  log_destination_type     = var.flow_log_destination_type
-  log_destination          = local.flow_log_destination_arn
-  log_format               = var.flow_log_log_format
-  iam_role_arn             = local.flow_log_iam_role_arn
-  traffic_type             = var.flow_log_traffic_type
+  log_destination_type     = lookup(each.value, "log_destination_type", null)
+  log_destination          = lookup(each.value, "log_destination", null)
+  log_format               = lookup(each.value, "log_format", null)
+  iam_role_arn             = lookup(each.value, "iam_role_arn", null)
+  traffic_type             = lookup(each.value, "traffic_type", null)
   vpc_id                   = local.vpc_id
-  max_aggregation_interval = var.flow_log_max_aggregation_interval
+  max_aggregation_interval = lookup(each.value, "max_aggregation_interval", null)
+
+
 
   dynamic "destination_options" {
-    for_each = var.flow_log_destination_type == "s3" ? [true] : []
+    for_each = lookup(each.value, "destination_options", [])
 
     content {
-      file_format                = var.flow_log_file_format
-      hive_compatible_partitions = var.flow_log_hive_compatible_partitions
-      per_hour_partition         = var.flow_log_per_hour_partition
+      file_format                = destination_options.value["file_format"]
+      hive_compatible_partitions = destination_options.value["hive_compatible_partitions"]
+      per_hour_partition         = destination_options.value["per_hour_partition"]
     }
   }
 
-  tags = merge(var.tags, var.vpc_flow_log_tags)
+
+
+  tags = try(each.value.tags, {})
 }
 
 ################################################################################
@@ -43,44 +47,47 @@ resource "aws_flow_log" "this" {
 ################################################################################
 
 resource "aws_cloudwatch_log_group" "flow_log" {
-  count = local.create_flow_log_cloudwatch_log_group ? 1 : 0
+  count = var.create_flow_log_cloudwatch_log_group ? 1 : 0
 
-  name              = "${var.flow_log_cloudwatch_log_group_name_prefix}${local.flow_log_cloudwatch_log_group_name_suffix}"
+  name              = var.flow_log_cloudwatch_log_group_name
   retention_in_days = var.flow_log_cloudwatch_log_group_retention_in_days
   kms_key_id        = var.flow_log_cloudwatch_log_group_kms_key_id
 
-  tags = merge(var.tags, var.vpc_flow_log_tags)
+  tags = var.flow_log_cloudwatch_log_group_tags
 }
 
 resource "aws_iam_role" "vpc_flow_log_cloudwatch" {
-  count = local.create_flow_log_cloudwatch_iam_role ? 1 : 0
+  count = var.create_flow_log_cloudwatch_iam_role ? 1 : 0
 
-  name_prefix          = "vpc-flow-log-role-"
-  assume_role_policy   = data.aws_iam_policy_document.flow_log_cloudwatch_assume_role[0].json
-  permissions_boundary = var.vpc_flow_log_permissions_boundary
+  name                 = var.flow_aws_iam_role_name
+  name_prefix          = var.flow_aws_iam_role_name_prefix
+  assume_role_policy   = var.flow_aws_iam_role_assume_role_policy
+  permissions_boundary = var.flow_aws_iam_role_permissions_boundary
+  description          = var.flow_aws_iam_role_description
+  path                 = var.flow_aws_iam_role_path
 
-  tags = merge(var.tags, var.vpc_flow_log_tags)
+  tags = var.flow_aws_iam_role_tags
 }
 
-data "aws_iam_policy_document" "flow_log_cloudwatch_assume_role" {
-  count = local.create_flow_log_cloudwatch_iam_role ? 1 : 0
+# data "aws_iam_policy_document" "flow_log_cloudwatch_assume_role" {
+#   count = local.create_flow_log_cloudwatch_iam_role ? 1 : 0
 
-  statement {
-    sid = "AWSVPCFlowLogsAssumeRole"
+#   statement {
+#     sid = "AWSVPCFlowLogsAssumeRole"
 
-    principals {
-      type        = "Service"
-      identifiers = ["vpc-flow-logs.amazonaws.com"]
-    }
+#     principals {
+#       type        = "Service"
+#       identifiers = ["vpc-flow-logs.amazonaws.com"]
+#     }
 
-    effect = "Allow"
+#     effect = "Allow"
 
-    actions = ["sts:AssumeRole"]
-  }
-}
+#     actions = ["sts:AssumeRole"]
+#   }
+# }
 
 resource "aws_iam_role_policy_attachment" "vpc_flow_log_cloudwatch" {
-  count = local.create_flow_log_cloudwatch_iam_role ? 1 : 0
+  count = var.create_flow_log_cloudwatch_iam_role ? 1 : 0
 
   role       = aws_iam_role.vpc_flow_log_cloudwatch[0].name
   policy_arn = aws_iam_policy.vpc_flow_log_cloudwatch[0].arn
@@ -89,26 +96,29 @@ resource "aws_iam_role_policy_attachment" "vpc_flow_log_cloudwatch" {
 resource "aws_iam_policy" "vpc_flow_log_cloudwatch" {
   count = local.create_flow_log_cloudwatch_iam_role ? 1 : 0
 
-  name_prefix = "vpc-flow-log-to-cloudwatch-"
-  policy      = data.aws_iam_policy_document.vpc_flow_log_cloudwatch[0].json
-  tags        = merge(var.tags, var.vpc_flow_log_tags)
+  name        = var.flow_iam_policy_name
+  name_prefix = var.flow_name_prefix
+  description = var.flow_iam_policy_description
+  policy      = var.flow_iam_policy_document
+  path        = var.flow_iam_policy_path
+  tags        = var.flow_policy_tags
 }
 
-data "aws_iam_policy_document" "vpc_flow_log_cloudwatch" {
-  count = local.create_flow_log_cloudwatch_iam_role ? 1 : 0
+# data "aws_iam_policy_document" "vpc_flow_log_cloudwatch" {
+#   count = local.create_flow_log_cloudwatch_iam_role ? 1 : 0
 
-  statement {
-    sid = "AWSVPCFlowLogsPushToCloudWatch"
+#   statement {
+#     sid = "AWSVPCFlowLogsPushToCloudWatch"
 
-    effect = "Allow"
+#     effect = "Allow"
 
-    actions = [
-      "logs:CreateLogStream",
-      "logs:PutLogEvents",
-      "logs:DescribeLogGroups",
-      "logs:DescribeLogStreams",
-    ]
+#     actions = [
+#       "logs:CreateLogStream",
+#       "logs:PutLogEvents",
+#       "logs:DescribeLogGroups",
+#       "logs:DescribeLogStreams",
+#     ]
 
-    resources = ["*"]
-  }
-}
+#     resources = ["*"]
+#   }
+# }
