@@ -215,6 +215,7 @@ variable "public_subnets" {
       eip_tags = map(string)
     }))
   }))
+  default = {}
 }
 
 
@@ -302,6 +303,7 @@ variable "public_route_tables" {
   type = map(object({
     tags = map(string)
   }))
+  default = {}
 }
 
 ################################################################################
@@ -369,6 +371,7 @@ variable "private_subnets" {
     tags            = map(string)
     route_tables    = list(any)
   }))
+  default = {}
 }
 
 variable "private_subnet_assign_ipv6_address_on_creation" {
@@ -449,6 +452,7 @@ variable "private_route_tables" {
     tags                 = map(string)
     nat_gateway_attached = string
   }))
+  default = {}
 }
 
 
