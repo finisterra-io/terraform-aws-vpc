@@ -197,11 +197,27 @@ variable "enable_dhcp_options_association" {
 # Publiс Subnets
 ################################################################################
 
+# variable "public_subnets" {
+#   description = "A list of public subnets inside the VPC"
+#   type        = list(string)
+#   default     = []
+# }
+
 variable "public_subnets" {
-  description = "A list of public subnets inside the VPC"
-  type        = list(string)
-  default     = []
+  description = "Information about the public subnets to be created"
+  type = map(object({
+    az              = string
+    ipv6_cidr_block = string
+    tags            = map(string)
+    route_tables    = list(any)
+    nat_gateway = map(object({
+      tags     = map(string)
+      eip_tags = map(string)
+    }))
+  }))
 }
+
+
 
 variable "public_subnet_assign_ipv6_address_on_creation" {
   description = "Specify true to indicate that network interfaces created in the specified subnet should be assigned an IPv6 address. Default is `false`"
@@ -281,6 +297,13 @@ variable "public_route_table_tags" {
   default     = {}
 }
 
+variable "public_route_tables" {
+  description = "Information about the public route tables to be created"
+  type = map(object({
+    tags = map(string)
+  }))
+}
+
 ################################################################################
 # Public Network ACLs
 ################################################################################
@@ -332,10 +355,20 @@ variable "public_acl_tags" {
 # Private Subnets
 ################################################################################
 
+# variable "private_subnets" {
+#   description = "A list of private subnets inside the VPC"
+#   type        = list(string)
+#   default     = []
+# }
+
 variable "private_subnets" {
-  description = "A list of private subnets inside the VPC"
-  type        = list(string)
-  default     = []
+  description = "Information about the private subnets to be created"
+  type = map(object({
+    az              = string
+    ipv6_cidr_block = string
+    tags            = map(string)
+    route_tables    = list(any)
+  }))
 }
 
 variable "private_subnet_assign_ipv6_address_on_creation" {
@@ -409,6 +442,15 @@ variable "private_route_table_tags" {
   type        = list(map(any))
   default     = []
 }
+
+variable "private_route_tables" {
+  description = "Information about the private route tables to be created"
+  type = map(object({
+    tags                 = map(string)
+    nat_gateway_attached = string
+  }))
+}
+
 
 ################################################################################
 # Private Network ACLs
