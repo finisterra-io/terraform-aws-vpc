@@ -64,8 +64,21 @@ resource "aws_vpc_ipv4_cidr_block_association" "this" {
 # DHCP Options Set
 ################################################################################
 
+data "aws_vpc_dhcp_options" "selected" {
+  count = local.create_vpc && var.enable_dhcp_options_association ? 1 : 0
+  filter {
+    name   = "key"
+    values = ["domain-name"]
+  }
+
+  filter {
+    name   = "value"
+    values = [var.dhcp_options_domain_name]
+  }
+}
+
 resource "aws_vpc_dhcp_options" "this" {
-  count = local.create_vpc && var.enable_dhcp_options ? 1 : 0
+  count = local.create_vpc && var.create_dhcp_options ? 1 : 0
 
   domain_name          = var.dhcp_options_domain_name
   domain_name_servers  = var.dhcp_options_domain_name_servers
@@ -80,7 +93,7 @@ resource "aws_vpc_dhcp_options_association" "this" {
   count = local.create_vpc && var.enable_dhcp_options_association ? 1 : 0
 
   vpc_id          = local.vpc_id
-  dhcp_options_id = var.dhcp_options_id
+  dhcp_options_id = var.create_dhcp_options ? aws_vpc_dhcp_options.this[0].id : data.aws_vpc_dhcp_options.selected[0].id
 }
 
 ################################################################################
@@ -160,47 +173,107 @@ resource "aws_route" "public_internet_gateway_ipv6" {
 # All Network ACLs
 ################################################################################
 
+# resource "aws_network_acl" "this" {
+#   for_each = { for k, v in var.aws_network_acls : k => v }
+
+#   vpc_id     = local.vpc_id
+#   subnet_ids = each.value.subnet_ids
+#   tags       = each.value.tags
+# }
+
+# resource "aws_network_acl_rule" "ingress" {
+#   for_each = { for k, v in var.aws_network_acl_ingress_rules : k => v }
+
+#   network_acl_id = each.value.network_acl_id
+
+#   egress          = false
+#   rule_number     = each.value.rule_number
+#   rule_action     = each.value.rule_action
+#   from_port       = lookup(each.value, "from_port", null)
+#   to_port         = lookup(each.value, "to_port", null)
+#   icmp_code       = lookup(each.value, "icmp_code", null)
+#   icmp_type       = lookup(each.value, "icmp_type", null)
+#   protocol        = each.value.protocol
+#   cidr_block      = lookup(each.value, "cidr_block", null)
+#   ipv6_cidr_block = lookup(each.value, "ipv6_cidr_block", null)
+# }
+
+# resource "aws_network_acl_rule" "egress" {
+#   for_each = { for k, v in var.aws_network_acl_egress_rules : k => v }
+
+#   network_acl_id = each.value.network_acl_id
+
+#   egress          = true
+#   rule_number     = each.value.rule_number
+#   rule_action     = each.value.rule_action
+#   from_port       = lookup(each.value, "from_port", null)
+#   to_port         = lookup(each.value, "to_port", null)
+#   icmp_code       = lookup(each.value, "icmp_code", null)
+#   icmp_type       = lookup(each.value, "icmp_type", null)
+#   protocol        = each.value.protocol
+#   cidr_block      = lookup(each.value, "cidr_block", null)
+#   ipv6_cidr_block = lookup(each.value, "ipv6_cidr_block", null)
+# }
+
+
+locals {
+
+  ingress_rules = flatten([
+    for acl, details in var.aws_network_acls :
+    [for k, v in details.ingress_rules : {
+      acl_key     = acl,
+      rule_key    = k,
+      rule_values = v
+    }]
+  ])
+
+  egress_rules = flatten([
+    for acl, details in var.aws_network_acls :
+    [for k, v in details.egress_rules : {
+      acl_key     = acl,
+      rule_key    = k,
+      rule_values = v
+    }]
+  ])
+}
+
 resource "aws_network_acl" "this" {
-  for_each = { for k, v in var.aws_network_acls : k => v }
+  for_each = var.aws_network_acls
 
   vpc_id     = local.vpc_id
-  subnet_ids = each.value.subnet_ids
+  subnet_ids = [for cidr in each.value.subnet_ids : (try(aws_subnet.private[cidr].id, aws_subnet.public[cidr].id))]
   tags       = each.value.tags
 }
 
 resource "aws_network_acl_rule" "ingress" {
-  for_each = { for k, v in var.aws_network_acl_ingress_rules : k => v }
+  for_each = { for rule in local.ingress_rules : "${rule.acl_key}_${rule.rule_key}" => rule }
 
-  network_acl_id = each.value.network_acl_id
+  network_acl_id = aws_network_acl.this[each.value.acl_key].id
 
-  egress          = false
-  rule_number     = each.value.rule_number
-  rule_action     = each.value.rule_action
-  from_port       = lookup(each.value, "from_port", null)
-  to_port         = lookup(each.value, "to_port", null)
-  icmp_code       = lookup(each.value, "icmp_code", null)
-  icmp_type       = lookup(each.value, "icmp_type", null)
-  protocol        = each.value.protocol
-  cidr_block      = lookup(each.value, "cidr_block", null)
-  ipv6_cidr_block = lookup(each.value, "ipv6_cidr_block", null)
+  egress      = false
+  rule_number = each.value.rule_values.rule_number
+  rule_action = each.value.rule_values.rule_action
+  from_port   = lookup(each.value.rule_values, "from_port", null)
+  to_port     = lookup(each.value.rule_values, "to_port", null)
+  protocol    = each.value.rule_values.protocol
+  cidr_block  = lookup(each.value.rule_values, "cidr_block", null)
 }
 
 resource "aws_network_acl_rule" "egress" {
-  for_each = { for k, v in var.aws_network_acl_egress_rules : k => v }
+  for_each = { for rule in local.egress_rules : "${rule.acl_key}_${rule.rule_key}" => rule }
 
-  network_acl_id = each.value.network_acl_id
+  network_acl_id = aws_network_acl.this[each.value.acl_key].id
 
-  egress          = true
-  rule_number     = each.value.rule_number
-  rule_action     = each.value.rule_action
-  from_port       = lookup(each.value, "from_port", null)
-  to_port         = lookup(each.value, "to_port", null)
-  icmp_code       = lookup(each.value, "icmp_code", null)
-  icmp_type       = lookup(each.value, "icmp_type", null)
-  protocol        = each.value.protocol
-  cidr_block      = lookup(each.value, "cidr_block", null)
-  ipv6_cidr_block = lookup(each.value, "ipv6_cidr_block", null)
+  egress      = true
+  rule_number = each.value.rule_values.rule_number
+  rule_action = each.value.rule_values.rule_action
+  from_port   = lookup(each.value.rule_values, "from_port", null)
+  to_port     = lookup(each.value.rule_values, "to_port", null)
+  protocol    = each.value.rule_values.protocol
+  cidr_block  = lookup(each.value.rule_values, "cidr_block", null)
 }
+
+
 
 ################################################################################
 # Private Subnets

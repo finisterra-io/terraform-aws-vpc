@@ -139,7 +139,7 @@ variable "aws_network_acl_egress_rules" {
 # DHCP Options Set
 ################################################################################
 
-variable "enable_dhcp_options" {
+variable "create_dhcp_options" {
   description = "Should be true if you want to specify a DHCP options set with a custom domain name, DNS servers, NTP servers, netbios servers, and/or netbios server type"
   type        = bool
   default     = false
