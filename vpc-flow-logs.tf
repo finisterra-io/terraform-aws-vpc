@@ -14,11 +14,18 @@ locals {
 # Flow Log
 ################################################################################
 
+data "aws_s3_bucket" "this" {
+  for_each = { for k, v in var.aws_flow_logs : k => v }
+
+  bucket = lookup(each.value, "log_destination", null)
+
+}
+
 resource "aws_flow_log" "this" {
   for_each = { for k, v in var.aws_flow_logs : k => v }
 
   log_destination_type     = lookup(each.value, "log_destination_type", null)
-  log_destination          = lookup(each.value, "log_destination", null)
+  log_destination          = data.aws_s3_bucket.this[each.key].arn
   log_format               = lookup(each.value, "log_format", null)
   iam_role_arn             = lookup(each.value, "iam_role_arn", null)
   traffic_type             = lookup(each.value, "traffic_type", null)
