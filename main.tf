@@ -690,8 +690,7 @@ resource "aws_default_route_table" "default" {
     content {
       # One of the following destinations must be provided
       cidr_block      = route.value.cidr_block
-      ipv6_cidr_block = lookup(route.value, "ipv6_cidr_block", "") == "" ? null : lookup(route.value, "ipv6_cidr_block")
-
+      ipv6_cidr_block = lookup(route.value, "ipv6_cidr_block", null)
 
       # One of the following targets must be provided
       egress_only_gateway_id    = lookup(route.value, "egress_only_gateway_id", null)
