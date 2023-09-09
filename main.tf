@@ -64,18 +64,18 @@ resource "aws_vpc_ipv4_cidr_block_association" "this" {
 # DHCP Options Set
 ################################################################################
 
-data "aws_vpc_dhcp_options" "selected" {
-  count = local.create_vpc && var.enable_dhcp_options_association ? 1 : 0
-  filter {
-    name   = "key"
-    values = ["domain-name"]
-  }
+# data "aws_vpc_dhcp_options" "selected" {
+#   count = local.create_vpc && var.enable_dhcp_options_association ? 1 : 0
+#   filter {
+#     name   = "key"
+#     values = ["domain-name"]
+#   }
 
-  filter {
-    name   = "value"
-    values = [var.dhcp_options_domain_name]
-  }
-}
+#   filter {
+#     name   = "value"
+#     values = [var.dhcp_options_domain_name]
+#   }
+# }
 
 resource "aws_vpc_dhcp_options" "this" {
   count = local.create_vpc && var.create_dhcp_options ? 1 : 0
@@ -93,7 +93,8 @@ resource "aws_vpc_dhcp_options_association" "this" {
   count = local.create_vpc && var.enable_dhcp_options_association ? 1 : 0
 
   vpc_id          = local.vpc_id
-  dhcp_options_id = var.create_dhcp_options ? aws_vpc_dhcp_options.this[0].id : data.aws_vpc_dhcp_options.selected[0].id
+  dhcp_options_id = aws_vpc_dhcp_options.this[0].id
+  # dhcp_options_id = var.create_dhcp_options ? aws_vpc_dhcp_options.this[0].id : data.aws_vpc_dhcp_options.selected[0].id
 }
 
 ################################################################################
