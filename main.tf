@@ -19,6 +19,8 @@ locals {
   # Use `local.vpc_id` to give a hint to Terraform that subnets should be deleted before secondary CIDR blocks can be free!
   vpc_id = try(aws_vpc_ipv4_cidr_block_association.this[0].vpc_id, aws_vpc.this[0].id, "")
 
+  dhcp_options_id = try(aws_vpc_dhcp_options.this[0].id, "")
+
   create_vpc = var.create_vpc
 }
 
@@ -92,8 +94,9 @@ resource "aws_vpc_dhcp_options" "this" {
 resource "aws_vpc_dhcp_options_association" "this" {
   count = local.create_vpc && var.enable_dhcp_options_association ? 1 : 0
 
-  vpc_id          = local.vpc_id
-  dhcp_options_id = aws_vpc_dhcp_options.this[*].id
+  vpc_id = local.vpc_id
+  # dhcp_options_id = aws_vpc_dhcp_options.this[0].id
+  dhcp_options_id = local.dhcp_options_id
   # dhcp_options_id = var.create_dhcp_options ? aws_vpc_dhcp_options.this[0].id : data.aws_vpc_dhcp_options.selected[0].id
 }
 
