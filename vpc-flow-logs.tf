@@ -2,24 +2,13 @@ locals {
   # Only create flow log if user selected to create a VPC as well
   enable_flow_log = var.create_vpc && var.enable_flow_log
 
-  create_flow_log_cloudwatch_iam_role  = local.enable_flow_log && var.flow_log_destination_type != "s3" && var.create_flow_log_cloudwatch_iam_role
-  create_flow_log_cloudwatch_log_group = local.enable_flow_log && var.flow_log_destination_type != "s3" && var.create_flow_log_cloudwatch_log_group
-
-  flow_log_destination_arn                  = local.create_flow_log_cloudwatch_log_group ? try(aws_cloudwatch_log_group.flow_log[0].arn, null) : var.flow_log_destination_arn
-  flow_log_iam_role_arn                     = var.flow_log_destination_type != "s3" && local.create_flow_log_cloudwatch_iam_role ? try(aws_iam_role.vpc_flow_log_cloudwatch[0].arn, null) : var.flow_log_cloudwatch_iam_role_arn
-  flow_log_cloudwatch_log_group_name_suffix = var.flow_log_cloudwatch_log_group_name_suffix == "" ? local.vpc_id : var.flow_log_cloudwatch_log_group_name_suffix
+  create_flow_log_cloudwatch_iam_role = local.enable_flow_log && var.flow_log_destination_type != "s3" && var.create_flow_log_cloudwatch_iam_role
 }
 
 ################################################################################
 # Flow Log
 ################################################################################
 
-# data "aws_s3_bucket" "this" {
-#   for_each = { for k, v in var.aws_flow_logs : k => v }
-
-#   bucket = lookup(each.value, "log_destination", null)
-
-# }
 
 resource "aws_flow_log" "this" {
   for_each = { for k, v in var.aws_flow_logs : k => v }
@@ -75,22 +64,6 @@ resource "aws_iam_role" "vpc_flow_log_cloudwatch" {
   tags = var.flow_aws_iam_role_tags
 }
 
-# data "aws_iam_policy_document" "flow_log_cloudwatch_assume_role" {
-#   count = local.create_flow_log_cloudwatch_iam_role ? 1 : 0
-
-#   statement {
-#     sid = "AWSVPCFlowLogsAssumeRole"
-
-#     principals {
-#       type        = "Service"
-#       identifiers = ["vpc-flow-logs.amazonaws.com"]
-#     }
-
-#     effect = "Allow"
-
-#     actions = ["sts:AssumeRole"]
-#   }
-# }
 
 resource "aws_iam_role_policy_attachment" "vpc_flow_log_cloudwatch" {
   count = var.create_flow_log_cloudwatch_iam_role ? 1 : 0
@@ -109,21 +82,3 @@ resource "aws_iam_policy" "vpc_flow_log_cloudwatch" {
   tags        = var.flow_policy_tags
 }
 
-# data "aws_iam_policy_document" "vpc_flow_log_cloudwatch" {
-#   count = local.create_flow_log_cloudwatch_iam_role ? 1 : 0
-
-#   statement {
-#     sid = "AWSVPCFlowLogsPushToCloudWatch"
-
-#     effect = "Allow"
-
-#     actions = [
-#       "logs:CreateLogStream",
-#       "logs:PutLogEvents",
-#       "logs:DescribeLogGroups",
-#       "logs:DescribeLogStreams",
-#     ]
-
-#     resources = ["*"]
-#   }
-# }

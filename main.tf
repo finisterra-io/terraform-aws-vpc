@@ -1,25 +1,14 @@
 locals {
-  len_public_subnets      = max(length(var.public_subnets), length(var.public_subnet_ipv6_prefixes))
-  len_private_subnets     = max(length(var.private_subnets), length(var.private_subnet_ipv6_prefixes))
-  len_database_subnets    = max(length(var.database_subnets), length(var.database_subnet_ipv6_prefixes))
-  len_elasticache_subnets = max(length(var.elasticache_subnets), length(var.elasticache_subnet_ipv6_prefixes))
-  len_redshift_subnets    = max(length(var.redshift_subnets), length(var.redshift_subnet_ipv6_prefixes))
-  len_intra_subnets       = max(length(var.intra_subnets), length(var.intra_subnet_ipv6_prefixes))
-  len_outpost_subnets     = max(length(var.outpost_subnets), length(var.outpost_subnet_ipv6_prefixes))
+  len_public_subnets  = max(length(var.public_subnets), length(var.public_subnet_ipv6_prefixes))
+  len_private_subnets = max(length(var.private_subnets), length(var.private_subnet_ipv6_prefixes))
 
   max_subnet_length = max(
     local.len_private_subnets,
     local.len_public_subnets,
-    local.len_intra_subnets,
-    local.len_elasticache_subnets,
-    local.len_database_subnets,
-    local.len_redshift_subnets,
   )
 
   # Use `local.vpc_id` to give a hint to Terraform that subnets should be deleted before secondary CIDR blocks can be free!
   vpc_id = try(aws_vpc_ipv4_cidr_block_association.this[0].vpc_id, aws_vpc.this[0].id, "")
-
-  dhcp_options_id = try(aws_vpc_dhcp_options.this[0].id, "")
 
   create_vpc = var.create_vpc
 }
@@ -80,7 +69,7 @@ resource "aws_vpc_ipv4_cidr_block_association" "this" {
 # }
 
 resource "aws_vpc_dhcp_options" "this" {
-  count = local.create_vpc && var.enable_dhcp_options_association ? 1 : 0
+  count = local.create_vpc && var.create_dhcp_options ? 1 : 0
 
   domain_name          = var.dhcp_options_domain_name
   domain_name_servers  = var.dhcp_options_domain_name_servers
@@ -96,7 +85,6 @@ resource "aws_vpc_dhcp_options_association" "this" {
 
   vpc_id          = local.vpc_id
   dhcp_options_id = aws_vpc_dhcp_options.this[0].id
-  # dhcp_options_id = local.dhcp_options_id
   # dhcp_options_id = var.create_dhcp_options ? aws_vpc_dhcp_options.this[0].id : data.aws_vpc_dhcp_options.selected[0].id
 }
 
@@ -173,51 +161,6 @@ resource "aws_route" "public_internet_gateway_ipv6" {
   gateway_id                  = aws_internet_gateway.this[0].id
 }
 
-################################################################################
-# All Network ACLs
-################################################################################
-
-# resource "aws_network_acl" "this" {
-#   for_each = { for k, v in var.aws_network_acls : k => v }
-
-#   vpc_id     = local.vpc_id
-#   subnet_ids = each.value.subnet_ids
-#   tags       = each.value.tags
-# }
-
-# resource "aws_network_acl_rule" "ingress" {
-#   for_each = { for k, v in var.aws_network_acl_ingress_rules : k => v }
-
-#   network_acl_id = each.value.network_acl_id
-
-#   egress          = false
-#   rule_number     = each.value.rule_number
-#   rule_action     = each.value.rule_action
-#   from_port       = lookup(each.value, "from_port", null)
-#   to_port         = lookup(each.value, "to_port", null)
-#   icmp_code       = lookup(each.value, "icmp_code", null)
-#   icmp_type       = lookup(each.value, "icmp_type", null)
-#   protocol        = each.value.protocol
-#   cidr_block      = lookup(each.value, "cidr_block", null)
-#   ipv6_cidr_block = lookup(each.value, "ipv6_cidr_block", null)
-# }
-
-# resource "aws_network_acl_rule" "egress" {
-#   for_each = { for k, v in var.aws_network_acl_egress_rules : k => v }
-
-#   network_acl_id = each.value.network_acl_id
-
-#   egress          = true
-#   rule_number     = each.value.rule_number
-#   rule_action     = each.value.rule_action
-#   from_port       = lookup(each.value, "from_port", null)
-#   to_port         = lookup(each.value, "to_port", null)
-#   icmp_code       = lookup(each.value, "icmp_code", null)
-#   icmp_type       = lookup(each.value, "icmp_type", null)
-#   protocol        = each.value.protocol
-#   cidr_block      = lookup(each.value, "cidr_block", null)
-#   ipv6_cidr_block = lookup(each.value, "ipv6_cidr_block", null)
-# }
 
 
 locals {
@@ -334,52 +277,6 @@ resource "aws_route_table_association" "private" {
 
 
 
-# resource "aws_subnet" "private" {
-#   count = local.create_private_subnets ? local.len_private_subnets : 0
-
-#   assign_ipv6_address_on_creation                = var.enable_ipv6 && var.private_subnet_ipv6_native ? true : var.private_subnet_assign_ipv6_address_on_creation
-#   availability_zone                              = length(regexall("^[a-z]{2}-", element(var.azs, count.index))) > 0 ? element(var.azs, count.index) : null
-#   availability_zone_id                           = length(regexall("^[a-z]{2}-", element(var.azs, count.index))) == 0 ? element(var.azs, count.index) : null
-#   cidr_block                                     = var.private_subnet_ipv6_native ? null : element(concat(var.private_subnets, [""]), count.index)
-#   enable_dns64                                   = var.enable_ipv6 && var.private_subnet_enable_dns64
-#   enable_resource_name_dns_aaaa_record_on_launch = var.enable_ipv6 && var.private_subnet_enable_resource_name_dns_aaaa_record_on_launch
-#   enable_resource_name_dns_a_record_on_launch    = !var.private_subnet_ipv6_native && var.private_subnet_enable_resource_name_dns_a_record_on_launch
-#   ipv6_cidr_block                                = var.enable_ipv6 && length(var.private_subnet_ipv6_prefixes) > 0 ? cidrsubnet(aws_vpc.this[0].ipv6_cidr_block, 8, var.private_subnet_ipv6_prefixes[count.index]) : null
-#   ipv6_native                                    = var.enable_ipv6 && var.private_subnet_ipv6_native
-#   private_dns_hostname_type_on_launch            = var.private_subnet_private_dns_hostname_type_on_launch
-#   vpc_id                                         = local.vpc_id
-
-#   tags = merge(
-#     {
-#       Name = try(
-#         var.private_subnet_names[count.index],
-#         format("${var.name}-${var.private_subnet_suffix}-%s", element(var.azs, count.index))
-#       )
-#     },
-#     var.tags,
-#     var.private_subnet_tags,
-#     lookup(var.private_subnet_tags_per_az, element(var.azs, count.index), {})
-#   )
-# }
-
-# # There are as many routing tables as the number of NAT gateways
-# resource "aws_route_table" "private" {
-#   count = local.create_private_subnets ? local.len_private_subnets : 0
-
-#   vpc_id = local.vpc_id
-
-#   tags = element(var.private_route_table_tags, count.index)
-# }
-
-# resource "aws_route_table_association" "private" {
-#   count = local.create_private_subnets ? local.len_private_subnets : 0
-
-#   subnet_id = element(aws_subnet.private[*].id, count.index)
-#   route_table_id = element(
-#     aws_route_table.private[*].id,
-#     var.single_nat_gateway ? 0 : count.index,
-#   )
-# }
 
 ################################################################################
 # Private Network ACLs
@@ -477,27 +374,8 @@ resource "aws_route" "private_ipv6_egress" {
 
 locals {
   nat_gateway_count = length(var.nat_gateways)
-  nat_gateway_ips   = var.reuse_nat_ips ? var.external_nat_ip_ids : try(aws_eip.nat[*].id, [])
 }
 
-# resource "aws_nat_gateway" "this" {
-#   for_each = { for key, value in var.public_subnets : key => value if value.nat_gateway.enabled }
-
-#   allocation_id = aws_eip.nat[each.key].id
-#   subnet_id     = aws_subnet.public[each.key].id
-#   tags          = each.value.nat_gateway.tags
-
-#   depends_on = [aws_internet_gateway.this]
-# }
-
-# resource "aws_eip" "nat" {
-#   for_each = { for key, value in var.public_subnets : key => value if value.nat_gateway.enabled }
-
-#   domain = "vpc"
-#   tags   = each.value.nat_gateway.eip_tags
-
-#   depends_on = [aws_internet_gateway.this]
-# }
 
 
 locals {
@@ -551,14 +429,6 @@ resource "aws_route" "private_nat_gateway" {
 
 
 
-# resource "aws_route" "private_nat_gateway" {
-#   for_each = { for k, v in var.nat_gateway_routes : k => v }
-
-#   route_table_id         = each.value.route_table_id
-#   destination_cidr_block = each.value.destination_cidr_block
-#   nat_gateway_id         = each.value.nat_gateway_id
-
-# }
 
 resource "aws_route" "private_dns64_nat_gateway" {
   count = local.create_vpc && var.enable_nat_gateway && var.enable_ipv6 && var.private_subnet_enable_dns64 ? local.nat_gateway_count : 0
@@ -637,7 +507,6 @@ resource "aws_default_network_acl" "this" {
   default_network_acl_id = aws_vpc.this[0].default_network_acl_id
 
   # subnet_ids is using lifecycle ignore_changes, so it is not necessary to list
-  # any explicitly. See https://github.com/terraform-aws-modules/terraform-aws-vpc/issues/736
   subnet_ids = null
 
   dynamic "ingress" {
