@@ -35,11 +35,7 @@ resource "aws_vpc" "this" {
   enable_dns_support                   = var.enable_dns_support
   enable_network_address_usage_metrics = var.enable_network_address_usage_metrics
 
-  tags = merge(
-    { "Name" = var.name },
-    var.tags,
-    var.vpc_tags,
-  )
+  tags = var.tags
 }
 
 resource "aws_vpc_ipv4_cidr_block_association" "this" {
@@ -110,16 +106,16 @@ locals {
 resource "aws_subnet" "public" {
   for_each = var.public_subnets
 
-  assign_ipv6_address_on_creation                = var.enable_ipv6 && var.public_subnet_ipv6_native ? true : var.public_subnet_assign_ipv6_address_on_creation
+  assign_ipv6_address_on_creation                = each.value.assign_ipv6_address_on_creation
   cidr_block                                     = each.key
   availability_zone                              = each.value.az
-  enable_dns64                                   = var.enable_ipv6 && var.public_subnet_enable_dns64
-  enable_resource_name_dns_aaaa_record_on_launch = var.enable_ipv6 && var.public_subnet_enable_resource_name_dns_aaaa_record_on_launch
-  enable_resource_name_dns_a_record_on_launch    = !var.public_subnet_ipv6_native && var.public_subnet_enable_resource_name_dns_a_record_on_launch
+  enable_dns64                                   = each.value.enable_dns64
+  enable_resource_name_dns_aaaa_record_on_launch = each.value.enable_resource_name_dns_aaaa_record_on_launch
+  enable_resource_name_dns_a_record_on_launch    = each.value.enable_resource_name_dns_a_record_on_launch
   ipv6_cidr_block                                = each.value.ipv6_cidr_block != "" ? each.value.ipv6_cidr_block : null
-  ipv6_native                                    = var.enable_ipv6 && var.public_subnet_ipv6_native
-  map_public_ip_on_launch                        = var.map_public_ip_on_launch
-  private_dns_hostname_type_on_launch            = var.public_subnet_private_dns_hostname_type_on_launch
+  ipv6_native                                    = each.value.ipv6_native
+  map_public_ip_on_launch                        = each.value.map_public_ip_on_launch
+  private_dns_hostname_type_on_launch            = each.value.private_dns_hostname_type_on_launch
   vpc_id                                         = local.vpc_id
 
   tags = each.value.tags
@@ -237,7 +233,7 @@ locals {
       for rt in subnet.route_tables : {
         subnet_cidr    = cidr
         route_table_id = rt
-      }
+      } if rt != ""
     ]
   ])
 }
@@ -245,15 +241,16 @@ locals {
 resource "aws_subnet" "private" {
   for_each = var.private_subnets
 
-  assign_ipv6_address_on_creation                = var.enable_ipv6 && var.private_subnet_ipv6_native ? true : var.private_subnet_assign_ipv6_address_on_creation
+  assign_ipv6_address_on_creation                = each.value.assign_ipv6_address_on_creation
   cidr_block                                     = each.key
   availability_zone                              = each.value.az
-  enable_dns64                                   = var.enable_ipv6 && var.private_subnet_enable_dns64
-  enable_resource_name_dns_aaaa_record_on_launch = var.enable_ipv6 && var.private_subnet_enable_resource_name_dns_aaaa_record_on_launch
-  enable_resource_name_dns_a_record_on_launch    = !var.private_subnet_ipv6_native && var.private_subnet_enable_resource_name_dns_a_record_on_launch
+  enable_dns64                                   = each.value.enable_dns64
+  enable_resource_name_dns_aaaa_record_on_launch = each.value.enable_resource_name_dns_aaaa_record_on_launch
+  enable_resource_name_dns_a_record_on_launch    = each.value.enable_resource_name_dns_a_record_on_launch
   ipv6_cidr_block                                = each.value.ipv6_cidr_block != "" ? each.value.ipv6_cidr_block : null
-  ipv6_native                                    = var.enable_ipv6 && var.private_subnet_ipv6_native
-  private_dns_hostname_type_on_launch            = var.private_subnet_private_dns_hostname_type_on_launch
+  ipv6_native                                    = each.value.ipv6_native
+  private_dns_hostname_type_on_launch            = each.value.private_dns_hostname_type_on_launch
+  map_public_ip_on_launch                        = each.value.map_public_ip_on_launch
   vpc_id                                         = local.vpc_id
 
   tags = each.value.tags
@@ -292,11 +289,7 @@ resource "aws_network_acl" "private" {
   vpc_id     = local.vpc_id
   subnet_ids = aws_subnet.private[*].id
 
-  tags = merge(
-    { "Name" = "${var.name}-${var.private_subnet_suffix}" },
-    var.tags,
-    var.private_acl_tags,
-  )
+  tags = var.private_acl_tags
 }
 
 resource "aws_network_acl_rule" "private_inbound" {
@@ -339,13 +332,11 @@ resource "aws_network_acl_rule" "private_outbound" {
 ################################################################################
 
 resource "aws_internet_gateway" "this" {
-  count = local.create_public_subnets && var.create_igw ? 1 : 0
+  count = var.create_igw ? 1 : 0
 
   vpc_id = local.vpc_id
 
-  tags = merge(
-    var.igw_tags,
-  )
+  tags = var.igw_tags
 }
 
 resource "aws_egress_only_internet_gateway" "this" {
@@ -353,11 +344,7 @@ resource "aws_egress_only_internet_gateway" "this" {
 
   vpc_id = local.vpc_id
 
-  tags = merge(
-    { "Name" = var.name },
-    var.tags,
-    var.igw_tags,
-  )
+  tags = var.igw_tags
 }
 
 resource "aws_route" "private_ipv6_egress" {
@@ -412,7 +399,7 @@ locals {
       route_table_name = route_table_name
       nat_gateway      = details.nat_gateway_attached
       tags             = details.tags
-    }
+    } if details.nat_gateway_attached != ""
   ]
 }
 
@@ -452,11 +439,7 @@ resource "aws_default_vpc" "this" {
   enable_dns_support   = var.default_vpc_enable_dns_support
   enable_dns_hostnames = var.default_vpc_enable_dns_hostnames
 
-  tags = merge(
-    { "Name" = coalesce(var.default_vpc_name, "default") },
-    var.tags,
-    var.default_vpc_tags,
-  )
+  tags = var.default_vpc_tags
 }
 
 resource "aws_default_security_group" "this" {
@@ -559,8 +542,9 @@ resource "aws_default_route_table" "default" {
     for_each = var.default_route_table_routes
     content {
       # One of the following destinations must be provided
-      cidr_block      = route.value.cidr_block
-      ipv6_cidr_block = lookup(route.value, "ipv6_cidr_block", null)
+      cidr_block                 = lookup(route.value, "cidr_block", null)
+      ipv6_cidr_block            = lookup(route.value, "ipv6_cidr_block", null)
+      destination_prefix_list_id = lookup(route.value, "destination_prefix_list_id", null)
 
       # One of the following targets must be provided
       egress_only_gateway_id    = lookup(route.value, "egress_only_gateway_id", null)

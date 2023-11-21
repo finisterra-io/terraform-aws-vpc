@@ -21,8 +21,6 @@ resource "aws_flow_log" "this" {
   vpc_id                   = local.vpc_id
   max_aggregation_interval = lookup(each.value, "max_aggregation_interval", null)
 
-
-
   dynamic "destination_options" {
     for_each = lookup(each.value, "destination_options", [])
 
@@ -32,8 +30,6 @@ resource "aws_flow_log" "this" {
       per_hour_partition         = destination_options.value["per_hour_partition"]
     }
   }
-
-
 
   tags = try(each.value.tags, {})
 }
@@ -52,33 +48,33 @@ resource "aws_cloudwatch_log_group" "flow_log" {
   tags = var.flow_log_cloudwatch_log_group_tags
 }
 
-resource "aws_iam_role" "vpc_flow_log_cloudwatch" {
-  count = var.create_flow_log_cloudwatch_iam_role ? 1 : 0
+# resource "aws_iam_role" "vpc_flow_log_cloudwatch" {
+#   count = var.create_flow_log_cloudwatch_iam_role ? 1 : 0
 
-  name                 = var.flow_aws_iam_role_name
-  assume_role_policy   = var.flow_aws_iam_role_assume_role_policy
-  permissions_boundary = var.flow_aws_iam_role_permissions_boundary
-  description          = var.flow_aws_iam_role_description
-  path                 = var.flow_aws_iam_role_path
+#   name                 = var.flow_aws_iam_role_name
+#   assume_role_policy   = var.flow_aws_iam_role_assume_role_policy
+#   permissions_boundary = var.flow_aws_iam_role_permissions_boundary
+#   description          = var.flow_aws_iam_role_description
+#   path                 = var.flow_aws_iam_role_path
 
-  tags = var.flow_aws_iam_role_tags
-}
+#   tags = var.flow_aws_iam_role_tags
+# }
 
 
-resource "aws_iam_role_policy_attachment" "vpc_flow_log_cloudwatch" {
-  count = var.create_flow_log_cloudwatch_iam_role ? 1 : 0
+# resource "aws_iam_role_policy_attachment" "vpc_flow_log_cloudwatch" {
+#   count = var.create_flow_log_cloudwatch_iam_role ? 1 : 0
 
-  role       = aws_iam_role.vpc_flow_log_cloudwatch[0].name
-  policy_arn = aws_iam_policy.vpc_flow_log_cloudwatch[0].arn
-}
+#   role       = aws_iam_role.vpc_flow_log_cloudwatch[0].name
+#   policy_arn = aws_iam_policy.vpc_flow_log_cloudwatch[0].arn
+# }
 
-resource "aws_iam_policy" "vpc_flow_log_cloudwatch" {
-  count = local.create_flow_log_cloudwatch_iam_role ? 1 : 0
+# resource "aws_iam_policy" "vpc_flow_log_cloudwatch" {
+#   count = local.create_flow_log_cloudwatch_iam_role ? 1 : 0
 
-  name        = var.flow_iam_policy_name
-  description = var.flow_iam_policy_description
-  policy      = var.flow_iam_policy_document
-  path        = var.flow_iam_policy_path
-  tags        = var.flow_policy_tags
-}
+#   name        = var.flow_iam_policy_name
+#   description = var.flow_iam_policy_description
+#   policy      = var.flow_iam_policy_document
+#   path        = var.flow_iam_policy_path
+#   tags        = var.flow_policy_tags
+# }
 

@@ -181,17 +181,8 @@ variable "enable_dhcp_options_association" {
 
 variable "public_subnets" {
   description = "Information about the public subnets to be created"
-  type = map(object({
-    az              = string
-    ipv6_cidr_block = string
-    tags            = map(string)
-    route_tables    = list(any)
-    nat_gateway = map(object({
-      tags     = map(string)
-      eip_tags = map(string)
-    }))
-  }))
-  default = {}
+  type        = any
+  default     = {}
 }
 
 
@@ -264,13 +255,8 @@ variable "public_route_tables" {
 
 variable "private_subnets" {
   description = "Information about the private subnets to be created"
-  type = map(object({
-    az              = string
-    ipv6_cidr_block = string
-    tags            = map(string)
-    route_tables    = list(any)
-  }))
-  default = {}
+  type        = any
+  default     = {}
 }
 
 variable "private_subnet_assign_ipv6_address_on_creation" {
@@ -685,12 +671,6 @@ variable "flow_log_cloudwatch_log_group_tags" {
 
 variable "flow_log_cloudwatch_log_group_name" {
   description = "The name of the CloudWatch log group for VPC Flow Logs"
-  type        = string
-  default     = ""
-}
-
-variable "dhcp_options_id" {
-  description = "The ID of the DHCP Options Set to associate to the VPC"
   type        = string
   default     = ""
 }
