@@ -674,3 +674,9 @@ variable "flow_log_cloudwatch_log_group_name" {
   type        = string
   default     = ""
 }
+
+variable "dhcp_options_id" {
+  description = "The ID of the DHCP Options Set to associate to the VPC"
+  type        = string
+  default     = ""
+}
