@@ -9,7 +9,6 @@ locals {
 # Flow Log
 ################################################################################
 
-
 resource "aws_flow_log" "this" {
   for_each = { for k, v in var.aws_flow_logs : k => v }
 
@@ -38,43 +37,12 @@ resource "aws_flow_log" "this" {
 # Flow Log CloudWatch
 ################################################################################
 
-resource "aws_cloudwatch_log_group" "flow_log" {
-  count = var.create_flow_log_cloudwatch_log_group ? 1 : 0
+# resource "aws_cloudwatch_log_group" "flow_log" {
+#   count = var.create_flow_log_cloudwatch_log_group ? 1 : 0
 
-  name              = var.flow_log_cloudwatch_log_group_name
-  retention_in_days = var.flow_log_cloudwatch_log_group_retention_in_days
-  kms_key_id        = var.flow_log_cloudwatch_log_group_kms_key_id
+#   name              = var.flow_log_cloudwatch_log_group_name
+#   retention_in_days = var.flow_log_cloudwatch_log_group_retention_in_days
+#   kms_key_id        = var.flow_log_cloudwatch_log_group_kms_key_id
 
-  tags = var.flow_log_cloudwatch_log_group_tags
-}
-
-# resource "aws_iam_role" "vpc_flow_log_cloudwatch" {
-#   count = var.create_flow_log_cloudwatch_iam_role ? 1 : 0
-
-#   name                 = var.flow_aws_iam_role_name
-#   assume_role_policy   = var.flow_aws_iam_role_assume_role_policy
-#   permissions_boundary = var.flow_aws_iam_role_permissions_boundary
-#   description          = var.flow_aws_iam_role_description
-#   path                 = var.flow_aws_iam_role_path
-
-#   tags = var.flow_aws_iam_role_tags
+#   tags = var.flow_log_cloudwatch_log_group_tags
 # }
-
-
-# resource "aws_iam_role_policy_attachment" "vpc_flow_log_cloudwatch" {
-#   count = var.create_flow_log_cloudwatch_iam_role ? 1 : 0
-
-#   role       = aws_iam_role.vpc_flow_log_cloudwatch[0].name
-#   policy_arn = aws_iam_policy.vpc_flow_log_cloudwatch[0].arn
-# }
-
-# resource "aws_iam_policy" "vpc_flow_log_cloudwatch" {
-#   count = local.create_flow_log_cloudwatch_iam_role ? 1 : 0
-
-#   name        = var.flow_iam_policy_name
-#   description = var.flow_iam_policy_description
-#   policy      = var.flow_iam_policy_document
-#   path        = var.flow_iam_policy_path
-#   tags        = var.flow_policy_tags
-# }
-

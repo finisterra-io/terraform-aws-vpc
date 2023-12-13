@@ -148,7 +148,6 @@ resource "aws_route" "public_internet_gateway" {
   }
 }
 
-
 resource "aws_route" "public_internet_gateway_ipv6" {
   count = local.create_public_subnets && var.create_igw && var.enable_ipv6 ? 1 : 0
 
@@ -156,8 +155,6 @@ resource "aws_route" "public_internet_gateway_ipv6" {
   destination_ipv6_cidr_block = "::/0"
   gateway_id                  = aws_internet_gateway.this[0].id
 }
-
-
 
 locals {
 
@@ -216,8 +213,6 @@ resource "aws_network_acl_rule" "egress" {
   cidr_block  = lookup(each.value.rule_values, "cidr_block", null)
 }
 
-
-
 ################################################################################
 # Private Subnets
 ################################################################################
@@ -225,7 +220,6 @@ resource "aws_network_acl_rule" "egress" {
 locals {
   create_private_subnets = local.create_vpc && local.len_private_subnets > 0
 }
-
 
 locals {
   flattened_private_subnets = flatten([
@@ -270,10 +264,6 @@ resource "aws_route_table_association" "private" {
   subnet_id      = aws_subnet.private[each.value.subnet_cidr].id
   route_table_id = aws_route_table.private[each.value.route_table_id].id
 }
-
-
-
-
 
 ################################################################################
 # Private Network ACLs
@@ -363,8 +353,6 @@ locals {
   nat_gateway_count = length(var.nat_gateways)
 }
 
-
-
 locals {
   nat_gateways_flattened = flatten([
     for subnet_cidr, details in var.public_subnets : [
@@ -392,7 +380,6 @@ resource "aws_eip" "nat" {
   depends_on = [aws_internet_gateway.this]
 }
 
-
 locals {
   private_route_tables_flattened = [
     for route_table_name, details in var.private_route_tables : {
@@ -412,10 +399,6 @@ resource "aws_route" "private_nat_gateway" {
   destination_cidr_block = "0.0.0.0/0"
   nat_gateway_id         = aws_nat_gateway.this[each.value.nat_gateway].id
 }
-
-
-
-
 
 resource "aws_route" "private_dns64_nat_gateway" {
   count = local.create_vpc && var.enable_nat_gateway && var.enable_ipv6 && var.private_subnet_enable_dns64 ? local.nat_gateway_count : 0
