@@ -74,11 +74,6 @@ resource "aws_vpc_dhcp_options_association" "this" {
 # Publiс Subnets
 ################################################################################
 
-locals {
-  create_public_subnets = local.create_vpc && local.len_public_subnets > 0
-}
-
-
 resource "aws_subnet" "public" {
   for_each = var.public_subnets
 
@@ -125,7 +120,7 @@ resource "aws_route_table_association" "public" {
 locals {
   flattened_public_route_table_routes = merge([
     for rt_name, rt_details in var.public_route_tables : {
-      for route_name, route in rt_details.routes : "${route_name}" => {
+      for route_name, route in rt_details.routes : route_name => {
         destination_cidr_block      = try(route.destination_cidr_block, null)
         destination_ipv6_cidr_block = try(route.destination_ipv6_cidr_block, null)
         igw                         = try(route.igw, null)
@@ -210,17 +205,6 @@ locals {
   create_private_subnets = local.create_vpc && local.len_private_subnets > 0
 }
 
-locals {
-  flattened_private_subnets = flatten([
-    for cidr, subnet in var.private_subnets : [
-      for rt in subnet.route_tables : {
-        subnet_cidr    = cidr
-        route_table_id = rt
-      } if rt != ""
-    ]
-  ])
-}
-
 resource "aws_subnet" "private" {
   for_each = var.private_subnets
 
@@ -267,7 +251,7 @@ resource "aws_route_table_association" "private" {
 locals {
   flattened_private_route_table_routes = merge([
     for rt_name, rt_details in var.private_route_tables : {
-      for route_name, route in rt_details.routes : "${route_name}" => {
+      for route_name, route in rt_details.routes : route_name => {
         destination_cidr_block      = try(route.destination_cidr_block, null)
         destination_ipv6_cidr_block = try(route.destination_ipv6_cidr_block, null)
         nat_gateway_name            = try(route.nat_gateway_name, null)
@@ -362,11 +346,6 @@ resource "aws_egress_only_internet_gateway" "this" {
 ################################################################################
 # NAT Gateway
 ################################################################################
-
-locals {
-  nat_gateway_count = length(var.nat_gateways)
-}
-
 resource "aws_nat_gateway" "this" {
   for_each = var.nat_gateways
 
