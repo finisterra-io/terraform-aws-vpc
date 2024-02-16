@@ -20,4 +20,7 @@ resource "aws_vpc_endpoint" "this" {
 
     }
   }
+  lifecycle {
+    ignore_changes = [auto_accept]
+  }
 }
