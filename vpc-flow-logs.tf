@@ -3,7 +3,7 @@
 ################################################################################
 
 resource "aws_flow_log" "this" {
-  for_each = { for k, v in var.aws_flow_logs : k => v }
+  for_each = { for k, v in var.aws_flow_logs : v.log_destination => v }
 
   log_destination_type     = lookup(each.value, "log_destination_type", null)
   log_destination          = lookup(each.value, "log_destination", null)
