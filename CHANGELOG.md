@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+### [1.0.4](https://github.com/finisterra-io/terraform-aws-vpc/compare/v1.0.3...v1.0.4) (2024-09-17)
+
+
+### Bug Fixes
+
+* vpc-ip6 ([400d3d4](https://github.com/finisterra-io/terraform-aws-vpc/commit/400d3d4d278df0dc497be85e700aff356e7659c2))
+* vpc-ip6 ([2b5d4d4](https://github.com/finisterra-io/terraform-aws-vpc/commit/2b5d4d401f752d218c653133523bf0735be31e0d))
+
 ### [1.0.3](https://github.com/finisterra-io/terraform-aws-vpc/compare/v1.0.2...v1.0.3) (2024-04-04)
 
 
