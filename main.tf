@@ -38,6 +38,10 @@ resource "aws_vpc" "this" {
   enable_network_address_usage_metrics = var.enable_network_address_usage_metrics
 
   tags = var.tags
+
+  lifecycle {
+    ignore_changes = [cidr_block, ipv6_cidr_block]
+  }
 }
 
 resource "aws_vpc_ipv4_cidr_block_association" "this" {
