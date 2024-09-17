@@ -40,7 +40,7 @@ resource "aws_vpc" "this" {
   tags = var.tags
 
   lifecycle {
-    ignore_changes = [cidr_block, ipv6_cidr_block]
+    ignore_changes = [cidr_block, ipv6_cidr_block, ipv6_association_id]
   }
 }
 
